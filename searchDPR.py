@@ -7,7 +7,7 @@ import argparse
 import collections
 from typing import Dict, List, Tuple, Optional
 
-from transformers import DPRQuestionEncoder, DPRQuestionEncoderTokenizer
+from transformers import AutoTokenizer, DPRQuestionEncoder, DPRQuestionEncoderTokenizer
 
 def cosine(a, b):
     norm_a = np.linalg.norm(a)
@@ -19,7 +19,7 @@ def get_Kbest(index, query_emb, K):
     for (doc, emb) in index:
         score = cosine(emb, query_emb)
         distances.append((doc, score))
-    distances.sort(key = lambda t : t[1])
+    distances.sort(key = lambda t : -t[1])
     return distances[:K]
 
 def parse_args():
@@ -39,7 +39,7 @@ def parse_args():
     return parser.parse_args()
 
 print("loading model...")
-tokenizer = DPRQuestionEncoderTokenizer.from_pretrained('facebook/dpr-question_encoder-single-nq-base')
+tokenizer = AutoTokenizer.from_pretrained('facebook/dpr-question_encoder-single-nq-base')
 model = DPRQuestionEncoder.from_pretrained('facebook/dpr-question_encoder-single-nq-base')
 print("done.")
 
@@ -48,7 +48,9 @@ def main(OPTS):
 
     out_pred={}
     predictions={}
-    index = pickle.load(OPTS.index) # (id, embedding) list
+    idx = open(OPTS.index_file, "rb")
+    index = pickle.load(idx) # (id, embedding) list
+    idx.close()
 
     with open(OPTS.q_file, encoding='utf-8') as f:
         dataset = {query['QUESTION_ID']: query for query in json.load(f)}
@@ -73,9 +75,9 @@ def main(OPTS):
             else:
                 i=1
                 for r in results:
-                    #print(i, r['doc_id'], r.score)
+                    #print(i, r[0], r[1])
                     pred["doc_id"]=r[0]
-                    pred["score"]=r[1]
+                    pred["score"]=str(r[1])
                     predictions[qid].append(pred)
                     i+=1
 

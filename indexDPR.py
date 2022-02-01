@@ -47,6 +47,6 @@ for k in docs.keys():
         sys.stderr.write('\n')
     sys.stderr.flush()
     i+=1
-
+    if i > 1200 : break
 
 pickle.dump(index, open("DPRindex.pkl", "wb"), protocol=3)
