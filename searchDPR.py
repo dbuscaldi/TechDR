@@ -62,7 +62,7 @@ def main(OPTS):
             input_ids = tokenizer(txt, return_tensors='pt')["input_ids"]
             query_embeddings = model(input_ids).pooler_output
 
-            results=get_Kbest(index, query_embeddings, K=5)
+            results=get_Kbest(index, query_embeddings[0].detach().numpy(), K=5)
 
             pred={}
             if len(results) == 0 :

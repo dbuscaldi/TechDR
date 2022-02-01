@@ -46,8 +46,6 @@ for k in docs.keys():
     if i % 800 == 0 and i > 0:
         sys.stderr.write('\n')
     sys.stderr.flush()
-    if i== 200:
-        break
     i+=1
 
 
