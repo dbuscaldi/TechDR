@@ -3,13 +3,15 @@ import os, sys, os.path
 from bs4 import BeautifulSoup
 import pickle
 
-from transformers import DPRContextEncoder, DPRContextEncoderTokenizer
+import tracemalloc
+
+from transformers import AutoTokenizer, DPRContextEncoder, DPRContextEncoderTokenizer
 
 file_path = sys.argv[1]
 inf = bz2.BZ2File(file_path, 'r') if file_path.endswith('.bz2') else  open(file_path, 'r')
 
 print("loading pre-trained model...")
-tokenizer = DPRContextEncoderTokenizer.from_pretrained('facebook/dpr-ctx_encoder-single-nq-base')
+tokenizer = AutoTokenizer.from_pretrained('facebook/dpr-ctx_encoder-single-nq-base')
 model = DPRContextEncoder.from_pretrained('facebook/dpr-ctx_encoder-single-nq-base')
 print("done.")
 
@@ -18,7 +20,7 @@ def get_chunks(text, size):
     c = text[:size]
     chunks.append(c)
     if len(text) > size:
-        chunks += get_chunks[text[size:]]
+        chunks += get_chunks(text[size:], size)
     return chunks
 
 index = [] #list of pairs (key, embeddings)
@@ -36,12 +38,17 @@ for k in docs.keys():
     for c in chunks: #we'll store more vectors for the same document, if there are more chunks
         input_ids = tokenizer(c, return_tensors='pt')["input_ids"]
         embeddings = model(input_ids).pooler_output
-        index.append((k, embeddings))
+        emb=embeddings[0].detach().numpy()
+        #print(emb)
+        index.append((k, emb))
     if i % 10 == 0:
         sys.stderr.write('.')
     if i % 800 == 0 and i > 0:
         sys.stderr.write('\n')
     sys.stderr.flush()
+    if i== 200:
+        break
     i+=1
+
 
 pickle.dump(index, open("DPRindex.pkl", "wb"), protocol=3)
